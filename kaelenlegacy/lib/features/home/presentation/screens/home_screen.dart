@@ -12,6 +12,7 @@ import 'package:kaelenlegacy/utils/image_rotator.dart';
 import 'package:kaelenlegacy/utils/fade_utils.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -79,32 +80,66 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _navigateToGameZoneWithRotatedBackground() async {
-    // Do not change device orientation to avoid system rotation animation.
-    // Use cached rotated bytes if available, otherwise wait for rotation.
-    final cached = getRotatedAssetCached('assets/images/mapbackground.png');
-    if (cached != null) {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => GameZoneScreen(rotatedBackground: cached),
-        ),
-      );
-      return;
+    // Strategy to avoid white flashes produced when the video surface is
+    // released by MediaCodec: push the GameZone route *without* removing
+    // this Home route immediately so the VideoPlayerController is not
+    // disposed while the destination is still initializing its image
+    // texture. The GameZone will signal back via a Completer when its
+    // background image has painted and the fade-in finished; only then
+    // we remove this route (which will trigger dispose and release
+    // video resources).
+
+    final Route<dynamic>? currentRoute = ModalRoute.of(context);
+    final Completer<void> imageReadyCompleter = Completer<void>();
+
+    // Get cached or generate rotated bytes
+    Uint8List? bytes = getRotatedAssetCached('assets/images/mapbackground.png');
+    try {
+      if (bytes == null) {
+        bytes = await getRotatedAsset('assets/images/mapbackground.png');
+      }
+    } catch (e) {
+      debugPrint('[HomeScreen] rotation failed: $e');
+      bytes = null;
     }
 
-    try {
-      final rotated = await getRotatedAsset('assets/images/mapbackground.png');
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => GameZoneScreen(rotatedBackground: rotated),
+    // Darken screen and give a short safety buffer so MediaCodec can
+    // disconnect while the UI is black.
+    await darken(_fadeController, duration: Duration(milliseconds: 300));
+    await Future.delayed(Duration(milliseconds: 250));
+
+    // Push the GameZone route with zero transition to avoid any framework
+    // animation or intermediate white frames.
+    if (!mounted) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => GameZoneScreen(
+          rotatedBackground: bytes,
+          onImageReadyCompleter: imageReadyCompleter,
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => GameZoneScreen()));
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        opaque: true,
+      ),
+    );
+
+    // Wait for the GameZone to report the image/fade is ready. Use a
+    // timeout as a safety net so we don't keep this route forever.
+    try {
+      await imageReadyCompleter.future.timeout(Duration(milliseconds: 2000));
+    } catch (_) {
+      // ignore timeout; we'll still try to remove the route below.
+    }
+
+    // Now remove this Home route so it's disposed (which will release
+    // video controllers). If we can't remove it for any reason, we
+    // silently continue; worst case the old route remains below.
+    if (currentRoute != null && mounted) {
+      try {
+        Navigator.of(context).removeRoute(currentRoute);
+      } catch (e) {
+        debugPrint('[HomeScreen] failed to remove route: $e');
+      }
     }
   }
 

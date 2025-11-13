@@ -31,6 +31,9 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        // Force dark background to avoid white flashes during transitions.
+        scaffoldBackgroundColor: Colors.black,
+        canvasColor: Colors.black,
         // This is the theme of your application.
         //
         // TRY THIS: Try running your application with "flutter run". You'll see
