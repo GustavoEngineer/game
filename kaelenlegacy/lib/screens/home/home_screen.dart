@@ -1,3 +1,4 @@
+// ...existing code...
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
@@ -13,6 +14,32 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
+      void _returnToMenu() async {
+        setState(() {
+          _videoOpacity = 0.0;
+          _isInitialized = false;
+          _isZooming = false;
+          _zoomScale = 1.0;
+          _fadeToBlack = 0.0;
+          _isTransitioning = false;
+          _showPreHome = false;
+        });
+        await _controller.pause();
+        await _controller.dispose();
+        _controller = VideoPlayerController.asset('assets/videos/intro.mp4');
+        await _controller.initialize();
+        setState(() {
+          _isInitialized = true;
+          _videoOpacity = 1.0;
+          _showPreHome = false;
+          _zoomScale = 1.0;
+          _isZooming = false;
+          _isTransitioning = false;
+          _fadeToBlack = 0.0;
+        });
+        _controller.setLooping(true);
+        _controller.play();
+      }
     with SingleTickerProviderStateMixin {
   late VideoPlayerController _controller;
   late AnimationController _fadeController;
@@ -25,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen>
   double _zoomScale = 1.0;
   bool _isZooming = false;
   bool _isTransitioning = false;
+  double _fadeToBlack = 0.0;
 
   @override
   void initState() {
@@ -115,17 +143,19 @@ class _HomeScreenState extends State<HomeScreen>
         final duration = _controller.value.duration;
         final position = _controller.value.position;
         if (duration.inMilliseconds > 0) {
-          // Un segundo antes de terminar
+          // Dos segundos antes de terminar
           if (!_isZooming &&
-              duration.inMilliseconds - position.inMilliseconds <= 1000) {
+              duration.inMilliseconds - position.inMilliseconds <= 2000) {
             setState(() {
               _isZooming = true;
               _zoomScale = 1.0;
+              _fadeToBlack = 0.0;
             });
-            // Animación de zoom
+            // Animación de zoom y fade-out
             Future.delayed(const Duration(milliseconds: 100), () {
               setState(() {
                 _zoomScale = 1.2; // Zoom in
+                _fadeToBlack = 1.0; // Apaga pantalla
               });
             });
           }
@@ -134,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen>
             setState(() {
               _isTransitioning = true;
             });
-            await Future.delayed(const Duration(milliseconds: 400));
+            await Future.delayed(const Duration(milliseconds: 200));
             await _controller.pause();
             await _controller.dispose();
             setState(() {
@@ -142,6 +172,7 @@ class _HomeScreenState extends State<HomeScreen>
               _isInitialized = false;
               _isZooming = false;
               _zoomScale = 1.0;
+              _fadeToBlack = 0.0;
               _isTransitioning = false;
             });
             // Transición: abre showmap.mp4 con fade-in
@@ -206,15 +237,62 @@ class _HomeScreenState extends State<HomeScreen>
       body: Stack(
         children: [
           if (_isInitialized)
-            AnimatedOpacity(
-              opacity: _videoOpacity,
-              duration: const Duration(milliseconds: 800),
-              child: AnimatedScale(
-                scale: _zoomScale,
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeInOut,
-                child: SizedBox.expand(child: VideoPlayer(_controller)),
-              ),
+            Stack(
+              children: [
+                AnimatedOpacity(
+                  opacity: _videoOpacity,
+                  duration: const Duration(milliseconds: 800),
+                  child: AnimatedScale(
+                    scale: _zoomScale,
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeInOut,
+                    child: SizedBox.expand(child: VideoPlayer(_controller)),
+                  ),
+                ),
+                AnimatedOpacity(
+                  opacity: _fadeToBlack,
+                  duration: const Duration(milliseconds: 600),
+                  child: Container(
+                    color: Colors.black,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+                if (_controller.dataSource == 'assets/videos/showmap.mp4')
+                  Positioned(
+                    bottom: 32,
+                    right: 32,
+                    child: GestureDetector(
+                      onTap: _returnToMenu,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'exit',
+                            style: TextStyle(
+                              fontFamily: 'Spectral',
+                              color: Colors.white,
+                              fontSize: 35,
+                              fontWeight: FontWeight.w300, // Light
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(2, 2),
+                                  blurRadius: 6,
+                                  color: Colors.black54,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           // Solo muestra el home si terminó la animación de carga principal
           // Sombra izquierda: sólo cuando el fondo es el video por defecto (intro.mp4)
