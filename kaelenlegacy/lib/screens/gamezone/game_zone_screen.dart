@@ -114,6 +114,7 @@ class _GameZoneScreenState extends State<GameZoneScreen> {
                 height: double.infinity,
               ),
             ),
+            // No se muestra el carrusel en esta pantalla
           ],
         ),
       ),

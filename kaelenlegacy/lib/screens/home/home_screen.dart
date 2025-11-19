@@ -271,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen>
           ],
 
           if (!_showPreHome &&
-              _controller.dataSource != 'assets/videos/newgameintro.mp4')
+              _controller.dataSource != 'assets/videos/newgameintro.mp4' &&
+              _controller.dataSource != 'assets/videos/showmap.mp4')
             Align(
               alignment: Alignment.centerRight,
               child: Container(
@@ -289,7 +290,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           if (!_showPreHome &&
               _isInitialized &&
-              _controller.dataSource != 'assets/videos/newgameintro.mp4')
+              _controller.dataSource != 'assets/videos/newgameintro.mp4' &&
+              _controller.dataSource != 'assets/videos/showmap.mp4')
             Positioned(
               top: MediaQuery.of(context).size.height * 0.18,
               right: 32,
