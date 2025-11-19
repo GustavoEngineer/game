@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
+import 'package:flutter/services.dart';
 import 'providers/menu_carousel_provider.dart';
 import '../gamezone/game_zone_screen.dart';
 
@@ -72,8 +73,13 @@ class _HomeScreenState extends State<HomeScreen>
     if (option == 'Store' &&
         _controller.dataSource != 'assets/videos/store.mp4') {
       await _changeVideo('assets/videos/store.mp4');
+    } else if (option == 'Settings' &&
+        _controller.dataSource != 'assets/videos/settings.mp4') {
+      await _changeVideo('assets/videos/settings.mp4');
     } else if (option != 'Store' &&
-        _controller.dataSource == 'assets/videos/store.mp4') {
+        option != 'Settings' &&
+        (_controller.dataSource == 'assets/videos/store.mp4' ||
+            _controller.dataSource == 'assets/videos/settings.mp4')) {
       await _changeVideo('assets/videos/intro.mp4');
     }
     if (option == 'New Game') {
@@ -100,6 +106,12 @@ class _HomeScreenState extends State<HomeScreen>
         }
       });
     }
+    if (option == 'Quit') {
+      // Cierra la aplicación
+      Future.delayed(const Duration(milliseconds: 300), () {
+        SystemNavigator.pop();
+      });
+    }
   }
 
   Future<void> _changeVideo(String asset) async {
@@ -110,7 +122,8 @@ class _HomeScreenState extends State<HomeScreen>
     _controller = VideoPlayerController.asset(asset);
     await _controller.initialize();
     if (asset == 'assets/videos/intro.mp4' ||
-        asset == 'assets/videos/store.mp4') {
+        asset == 'assets/videos/store.mp4' ||
+        asset == 'assets/videos/settings.mp4') {
       _controller.setLooping(true);
     } else {
       _controller.setLooping(false);

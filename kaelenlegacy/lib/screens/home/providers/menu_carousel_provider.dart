@@ -11,7 +11,7 @@ class MenuCarousel extends StatefulWidget {
 }
 
 class _MenuCarouselState extends State<MenuCarousel> {
-  final List<String> options = ['New Game', 'Settings', 'Store', 'Quit'];
+  final List<String> options = ['New Game', 'Store', 'Settings', 'Quit'];
   int _selectedIndex = 0;
 
   @override
@@ -23,27 +23,41 @@ class _MenuCarouselState extends State<MenuCarousel> {
         setState(() {
           _selectedIndex = index;
         });
+        // Llama al callback al cambiar de página
+        if (widget.onOptionChanged != null) {
+          widget.onOptionChanged!(options[index]);
+        }
       },
       itemBuilder: (context, index) {
         final isSelected = index == _selectedIndex;
         final textWidget = AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          padding: EdgeInsets.symmetric(vertical: isSelected ? 16 : 8),
-          child: Text(
-            options[index],
-            style: TextStyle(
-              fontFamily: 'Spectral',
-              fontStyle: FontStyle.italic,
-              fontSize: isSelected ? 36 : 28,
-              color: isSelected ? Colors.white : Colors.white54,
-              shadows: [
-                Shadow(
-                  offset: Offset(2, 2),
-                  blurRadius: 6,
-                  color: Colors.black54,
-                ),
-              ],
+          padding: EdgeInsets.symmetric(vertical: isSelected ? 20 : 8),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              options[index],
+              maxLines: 1,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                fontFamily: 'Spectral',
+                fontStyle: FontStyle.italic,
+                fontSize: isSelected ? 44 : 28,
+                color: isSelected
+                    ? Color(0xFFFFD700)
+                    : Colors.white54, // Dorado para seleccionado
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                shadows: [
+                  Shadow(
+                    offset: Offset(2, 2),
+                    blurRadius: 8,
+                    color: isSelected
+                        ? Color(0xFFFFD700).withOpacity(0.5)
+                        : Colors.black54,
+                  ),
+                ],
+              ),
             ),
           ),
         );
