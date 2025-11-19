@@ -22,6 +22,9 @@ class _HomeScreenState extends State<HomeScreen>
   // Nueva variable para controlar la animación de carga
   bool _showPreHome = true;
   int _menuSelectedIndex = 0; // <-- Nuevo estado
+  double _zoomScale = 1.0;
+  bool _isZooming = false;
+  bool _isTransitioning = false;
 
   @override
   void initState() {
@@ -111,8 +114,50 @@ class _HomeScreenState extends State<HomeScreen>
       _controller.addListener(() async {
         final duration = _controller.value.duration;
         final position = _controller.value.position;
-        if (duration.inMilliseconds > 0 && position >= duration) {
-          await _controller.pause();
+        if (duration.inMilliseconds > 0) {
+          // Un segundo antes de terminar
+          if (!_isZooming &&
+              duration.inMilliseconds - position.inMilliseconds <= 1000) {
+            setState(() {
+              _isZooming = true;
+              _zoomScale = 1.0;
+            });
+            // Animación de zoom
+            Future.delayed(const Duration(milliseconds: 100), () {
+              setState(() {
+                _zoomScale = 1.2; // Zoom in
+              });
+            });
+          }
+          // Cuando termina el video
+          if (position >= duration && !_isTransitioning) {
+            setState(() {
+              _isTransitioning = true;
+            });
+            await Future.delayed(const Duration(milliseconds: 400));
+            await _controller.pause();
+            await _controller.dispose();
+            setState(() {
+              _videoOpacity = 0.0;
+              _isInitialized = false;
+              _isZooming = false;
+              _zoomScale = 1.0;
+              _isTransitioning = false;
+            });
+            // Transición: abre showmap.mp4 con fade-in
+            _controller = VideoPlayerController.asset(
+              'assets/videos/showmap.mp4',
+            );
+            await _controller.initialize();
+            setState(() {
+              _isInitialized = true;
+            });
+            _controller.play();
+            await Future.delayed(const Duration(milliseconds: 400));
+            setState(() {
+              _videoOpacity = 1.0;
+            });
+          }
         }
       });
     }
@@ -164,7 +209,12 @@ class _HomeScreenState extends State<HomeScreen>
             AnimatedOpacity(
               opacity: _videoOpacity,
               duration: const Duration(milliseconds: 800),
-              child: SizedBox.expand(child: VideoPlayer(_controller)),
+              child: AnimatedScale(
+                scale: _zoomScale,
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
+                child: SizedBox.expand(child: VideoPlayer(_controller)),
+              ),
             ),
           // Solo muestra el home si terminó la animación de carga principal
           // Sombra izquierda: sólo cuando el fondo es el video por defecto (intro.mp4)
@@ -220,7 +270,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
 
-          if (!_showPreHome)
+          if (!_showPreHome &&
+              _controller.dataSource != 'assets/videos/newgameintro.mp4')
             Align(
               alignment: Alignment.centerRight,
               child: Container(
@@ -236,7 +287,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-          if (!_showPreHome && _isInitialized)
+          if (!_showPreHome &&
+              _isInitialized &&
+              _controller.dataSource != 'assets/videos/newgameintro.mp4')
             Positioned(
               top: MediaQuery.of(context).size.height * 0.18,
               right: 32,
