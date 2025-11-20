@@ -29,7 +29,9 @@ class _MenuCarouselState extends State<MenuCarousel> {
     _currentIndex = widget.selectedIndex;
     _pageController = PageController(
       initialPage: _currentIndex,
-      viewportFraction: 0.5, // Muestra más de las opciones vecinas
+      viewportFraction: widget.vertical
+          ? 0.35
+          : 0.5, // Ajusta para vertical y horizontal
     );
   }
 
@@ -76,48 +78,70 @@ class _MenuCarouselState extends State<MenuCarousel> {
             double scale = 1 - (distance * 0.3).clamp(0.0, 0.7);
             double opacity = 1 - (distance * 0.5).clamp(0.0, 0.7);
 
-            return Center(
+            return Align(
+              alignment: widget.vertical
+                  ? (index == widget.selectedIndex
+                        ? Alignment.centerRight
+                        : Alignment.center)
+                  : Alignment.center,
               child: GestureDetector(
                 onTap: () => _onTap(index),
                 child: Opacity(
                   opacity: opacity,
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      width: widget.vertical ? null : 320,
-                      alignment: Alignment.centerRight,
-                      padding: EdgeInsets.only(
-                        right: options[index] == 'Settings' ? 5.0 : 25.0,
-                      ),
-                      child: AnimatedDefaultTextStyle(
-                        duration: Duration(milliseconds: 200),
-                        style: TextStyle(
-                          fontFamily: 'Spectral',
-                          fontStyle: FontStyle.italic,
-                          fontSize: index == widget.selectedIndex ? 36 : 28,
-                          color: index == widget.selectedIndex
-                              ? Color(0xFFFFD700)
-                              : Colors.grey.shade400,
-                          fontWeight: index == widget.selectedIndex
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          shadows: [
-                            Shadow(
-                              offset: Offset(2, 2),
-                              blurRadius: 8,
-                              color: index == widget.selectedIndex
-                                  ? Color(0xFFFFD700).withOpacity(0.5)
-                                  : Colors.black54,
-                            ),
-                          ],
+                  child: Transform.translate(
+                    offset: widget.vertical
+                        ? Offset(
+                            0,
+                            index < widget.selectedIndex
+                                ? -40
+                                : (index > widget.selectedIndex ? 40 : 0),
+                          )
+                        : Offset(0, 0),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: widget.vertical
+                            ? null
+                            : (index == widget.selectedIndex ? 320 : 140),
+                        alignment: index == widget.selectedIndex
+                            ? Alignment.centerRight
+                            : Alignment.centerRight,
+                        padding: EdgeInsets.only(
+                          right: options[index] == 'Settings' ? 5.0 : 25.0,
+                          left: index == widget.selectedIndex ? 0.0 : 0.0,
                         ),
-                        child: Text(
-                          options[index],
-                          maxLines: options[index] == 'New\nGame' ? 2 : 1,
-                          overflow: options[index] == 'New\nGame'
-                              ? TextOverflow.visible
-                              : TextOverflow.visible,
-                          textAlign: TextAlign.left,
+                        child: AnimatedDefaultTextStyle(
+                          duration: Duration(milliseconds: 200),
+                          style: TextStyle(
+                            fontFamily: 'Spectral',
+                            fontStyle: FontStyle.italic,
+                            fontSize: index == widget.selectedIndex ? 36 : 28,
+                            color: index == widget.selectedIndex
+                                ? Color(0xFFFFD700)
+                                : Colors.grey.shade400,
+                            fontWeight: index == widget.selectedIndex
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(2, 2),
+                                blurRadius: 8,
+                                color: index == widget.selectedIndex
+                                    ? Color(
+                                        0xFFFFD700,
+                                      ).withAlpha((0.5 * 255).toInt())
+                                    : Colors.black54,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            options[index],
+                            maxLines: options[index] == 'New\nGame' ? 2 : 1,
+                            overflow: options[index] == 'New\nGame'
+                                ? TextOverflow.visible
+                                : TextOverflow.visible,
+                            textAlign: TextAlign.left,
+                          ),
                         ),
                       ),
                     ),
