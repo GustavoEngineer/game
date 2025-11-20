@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'providers/menu_carousel_provider.dart';
 import 'providers/store_roulette_provider.dart';
+import 'package:provider/provider.dart';
+import 'providers/settings_config_provider.dart';
 import '../gamezone/game_zone_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen>
         setState(() {
           _isInitialized = true;
           _controller.setLooping(false);
+          _controller.setVolume(context.read<SettingsConfigProvider>().volume);
           _controller.play();
           _videoOpacity = 1.0;
         });
@@ -71,6 +74,9 @@ class _HomeScreenState extends State<HomeScreen>
           setState(() {
             _isInitialized = true;
             _controller.setLooping(true);
+            _controller.setVolume(
+              context.read<SettingsConfigProvider>().volume,
+            );
             _controller.play();
             _videoOpacity = 1.0;
           });
@@ -90,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen>
         'assets/videos/newgameintro.mp4',
       );
       await _controller.initialize();
+      _controller.setVolume(context.read<SettingsConfigProvider>().volume);
       setState(() {
         _isInitialized = true;
         _videoOpacity = 0.0;
@@ -134,6 +141,9 @@ class _HomeScreenState extends State<HomeScreen>
               'assets/videos/showmap.mp4',
             );
             await _controller.initialize();
+            _controller.setVolume(
+              context.read<SettingsConfigProvider>().volume,
+            );
             setState(() {
               _isInitialized = true;
             });
@@ -167,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen>
     } else {
       _controller.setLooping(false);
     }
+    _controller.setVolume(context.read<SettingsConfigProvider>().volume);
     setState(() {
       _isInitialized = true;
       _videoOpacity = 0.0;
@@ -238,6 +249,12 @@ class _HomeScreenState extends State<HomeScreen>
                         setState(() {
                           _videoOpacity = 1.0;
                         });
+                        _controller.setLooping(true);
+                        _controller.play();
+                        await Future.delayed(const Duration(milliseconds: 200));
+                        setState(() {
+                          _videoOpacity = 1.0;
+                        });
                       },
                       child: Text(
                         'exit',
@@ -259,10 +276,124 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
               ],
             ),
+          // Efecto blur para Settings solo si el video es settings.mp4
+          if (_isInitialized &&
+              _controller.dataSource == 'assets/videos/settings.mp4')
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.3,
+                height: double.infinity,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(0),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.25),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 48,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Configuración',
+                            style: TextStyle(
+                              fontFamily: 'Spectral',
+                              fontSize: 32,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(1, 1),
+                                  blurRadius: 6,
+                                  color: Colors.black38,
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 32),
+                          Text(
+                            'Volumen',
+                            style: TextStyle(
+                              fontFamily: 'Spectral',
+                              fontSize: 22,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                          Slider(
+                            value: context
+                                .watch<SettingsConfigProvider>()
+                                .volume,
+                            min: 0.0,
+                            max: 1.0,
+                            onChanged: (value) {
+                              print('Slider volumen cambiado: $value');
+                              context.read<SettingsConfigProvider>().setVolume(
+                                value,
+                              );
+                              _controller.setVolume(value);
+                              print(
+                                'VideoPlayerController volumen seteado: ${_controller.value.volume}',
+                              );
+                            },
+                            activeColor: Colors.amber,
+                            inactiveColor: Colors.white24,
+                          ),
+                          SizedBox(height: 32),
+                          Text(
+                            'Cuenta',
+                            style: TextStyle(
+                              fontFamily: 'Spectral',
+                              fontSize: 22,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              textStyle: TextStyle(
+                                fontFamily: 'Spectral',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w300,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              // Acción de iniciar sesión
+                            },
+                            child: Text(
+                              'Iniciar sesión',
+                              style: TextStyle(
+                                fontFamily: 'Spectral',
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Solo muestra el home si terminó la animación de carga principal
           // Sombra izquierda: sólo cuando el fondo es el video por defecto (intro.mp4)
           if (!_showPreHome &&
-              (_controller.dataSource == 'assets/videos/intro.mp4')) ...[
+              (_controller.dataSource == 'assets/videos/intro.mp4'))
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
@@ -303,7 +434,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-          ],
 
           if (!_showPreHome &&
               _controller.dataSource != 'assets/videos/newgameintro.mp4' &&

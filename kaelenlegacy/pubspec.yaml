@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.0.5
   flame: ^1.11.0 # O la última versión disponible
   cupertino_icons: ^1.0.8
   video_player: ^2.5.1 # O la última versión disponible
@@ -33,4 +34,4 @@ flutter:
       fonts:
         - asset: assets/fonts/spectral/Spectral-Italic.ttf
         - asset: assets/fonts/spectral/Spectral-Light.ttf
-          style: italic
+          weight: 300
