@@ -76,26 +76,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _onMenuOptionChanged(String option) async {
     final cleanOption = option.replaceAll('\n', ' ');
-    setState(() {
-      _menuSelectedIndex = [
-        'New Game',
-        'Store',
-        'Settings',
-        'Quit',
-      ].indexOf(cleanOption);
-    });
-    if (cleanOption == 'Store' &&
-        _controller.dataSource != 'assets/videos/store.mp4') {
-      await _changeVideo('assets/videos/store.mp4');
-    } else if (cleanOption == 'Settings' &&
-        _controller.dataSource != 'assets/videos/settings.mp4') {
-      await _changeVideo('assets/videos/settings.mp4');
-    } else if (cleanOption != 'Store' &&
-        cleanOption != 'Settings' &&
-        (_controller.dataSource == 'assets/videos/store.mp4' ||
-            _controller.dataSource == 'assets/videos/settings.mp4')) {
-      await _changeVideo('assets/videos/intro.mp4');
-    }
+    // Solo acciones especiales al tap en "New Game" y "Quit"
     if (cleanOption == 'New Game') {
       setState(() => _videoOpacity = 0.0);
       await Future.delayed(const Duration(milliseconds: 500));
@@ -116,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen>
         final duration = _controller.value.duration;
         final position = _controller.value.position;
         if (duration.inMilliseconds > 0) {
-          // Dos segundos antes de terminar
           if (!_isZooming &&
               duration.inMilliseconds - position.inMilliseconds <= 2000) {
             setState(() {
@@ -124,15 +104,13 @@ class _HomeScreenState extends State<HomeScreen>
               _zoomScale = 1.0;
               _fadeToBlack = 0.0;
             });
-            // Animación de zoom y fade-out
             Future.delayed(const Duration(milliseconds: 100), () {
               setState(() {
-                _zoomScale = 1.2; // Zoom in
-                _fadeToBlack = 1.0; // Apaga pantalla
+                _zoomScale = 1.2;
+                _fadeToBlack = 1.0;
               });
             });
           }
-          // Cuando termina el video
           if (position >= duration && !_isTransitioning) {
             setState(() {
               _isTransitioning = true;
@@ -148,7 +126,6 @@ class _HomeScreenState extends State<HomeScreen>
               _fadeToBlack = 0.0;
               _isTransitioning = false;
             });
-            // Transición: abre showmap.mp4 con fade-in
             _controller = VideoPlayerController.asset(
               'assets/videos/showmap.mp4',
             );
@@ -166,7 +143,6 @@ class _HomeScreenState extends State<HomeScreen>
       });
     }
     if (cleanOption == 'Quit') {
-      // Cierra la aplicación
       Future.delayed(const Duration(milliseconds: 300), () {
         SystemNavigator.pop();
       });
@@ -363,110 +339,32 @@ class _HomeScreenState extends State<HomeScreen>
                 width: 120,
                 child: MenuCarousel(
                   vertical: true,
-                  onOptionChanged: (option) {
-                    // Solo ejecuta la acción de salir al presionar "Quit"
-                    final cleanOption = option.replaceAll('\n', ' ');
-                    if (cleanOption == 'Quit') {
-                      Future.delayed(const Duration(milliseconds: 300), () {
-                        SystemNavigator.pop();
-                      });
-                    }
-                  },
+                  onOptionChanged: _onMenuOptionChanged,
                   selectedIndex: _menuSelectedIndex,
-                  // Nuevo callback para cambiar el video al deslizar
                   onPageChanged: (index) async {
-                    final options = ['New Game', 'Store', 'Settings', 'Quit'];
-                    final cleanOption = options[index];
                     setState(() {
                       _menuSelectedIndex = index;
                     });
-                    if (cleanOption == 'Store' &&
+                    // Cambia el fondo/video al cambiar de opción
+                    final option = [
+                      'New Game',
+                      'Store',
+                      'Settings',
+                      'Quit',
+                    ][index];
+                    if (option == 'Store' &&
                         _controller.dataSource != 'assets/videos/store.mp4') {
                       await _changeVideo('assets/videos/store.mp4');
-                    } else if (cleanOption == 'Settings' &&
+                    } else if (option == 'Settings' &&
                         _controller.dataSource !=
                             'assets/videos/settings.mp4') {
                       await _changeVideo('assets/videos/settings.mp4');
-                    } else if (cleanOption != 'Store' &&
-                        cleanOption != 'Settings' &&
+                    } else if (option != 'Store' &&
+                        option != 'Settings' &&
                         (_controller.dataSource == 'assets/videos/store.mp4' ||
                             _controller.dataSource ==
                                 'assets/videos/settings.mp4')) {
                       await _changeVideo('assets/videos/intro.mp4');
-                    }
-                    if (cleanOption == 'New Game') {
-                      setState(() => _videoOpacity = 0.0);
-                      await Future.delayed(const Duration(milliseconds: 500));
-                      await _controller.pause();
-                      await _controller.dispose();
-                      _controller = VideoPlayerController.asset(
-                        'assets/videos/newgameintro.mp4',
-                      );
-                      await _controller.initialize();
-                      setState(() {
-                        _isInitialized = true;
-                        _videoOpacity = 0.0;
-                      });
-                      _controller.play();
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      setState(() => _videoOpacity = 1.0);
-                      _controller.addListener(() async {
-                        final duration = _controller.value.duration;
-                        final position = _controller.value.position;
-                        if (duration.inMilliseconds > 0) {
-                          if (!_isZooming &&
-                              duration.inMilliseconds -
-                                      position.inMilliseconds <=
-                                  2000) {
-                            setState(() {
-                              _isZooming = true;
-                              _zoomScale = 1.0;
-                              _fadeToBlack = 0.0;
-                            });
-                            Future.delayed(
-                              const Duration(milliseconds: 100),
-                              () {
-                                setState(() {
-                                  _zoomScale = 1.2;
-                                  _fadeToBlack = 1.0;
-                                });
-                              },
-                            );
-                          }
-                          if (position >= duration && !_isTransitioning) {
-                            setState(() {
-                              _isTransitioning = true;
-                            });
-                            await Future.delayed(
-                              const Duration(milliseconds: 200),
-                            );
-                            await _controller.pause();
-                            await _controller.dispose();
-                            setState(() {
-                              _videoOpacity = 0.0;
-                              _isInitialized = false;
-                              _isZooming = false;
-                              _zoomScale = 1.0;
-                              _fadeToBlack = 0.0;
-                              _isTransitioning = false;
-                            });
-                            _controller = VideoPlayerController.asset(
-                              'assets/videos/showmap.mp4',
-                            );
-                            await _controller.initialize();
-                            setState(() {
-                              _isInitialized = true;
-                            });
-                            _controller.play();
-                            await Future.delayed(
-                              const Duration(milliseconds: 400),
-                            );
-                            setState(() {
-                              _videoOpacity = 1.0;
-                            });
-                          }
-                        }
-                      });
                     }
                   },
                 ),

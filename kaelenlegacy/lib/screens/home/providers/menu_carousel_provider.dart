@@ -38,26 +38,30 @@ class _MenuCarouselState extends State<MenuCarousel> {
   @override
   void didUpdateWidget(covariant MenuCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Elimina la animación automática al cambiar selectedIndex
+    // Ahora solo se actualiza el índice interno
     if (widget.selectedIndex != _currentIndex) {
-      _pageController.animateToPage(
-        widget.selectedIndex,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.ease,
-      );
-      _currentIndex = widget.selectedIndex;
+      setState(() {
+        _currentIndex = widget.selectedIndex;
+      });
     }
   }
 
   void _onTap(int index) {
-    widget.onOptionChanged?.call(options[index]);
-    _pageController.animateToPage(
-      index,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.ease,
-    );
-    setState(() {
-      _currentIndex = index;
-    });
+    print('Tap en opción: ${options[index]}');
+    widget.onOptionChanged?.call(
+      options[index],
+    ); // Solo aquí se activa la acción
+    if (_currentIndex != index) {
+      _pageController.animateToPage(
+        index,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   @override
@@ -71,7 +75,16 @@ class _MenuCarouselState extends State<MenuCarousel> {
           controller: _pageController,
           scrollDirection: widget.vertical ? Axis.vertical : Axis.horizontal,
           itemCount: options.length,
-          onPageChanged: widget.onPageChanged,
+          // Elimina la acción automática al cambiar página
+          onPageChanged: (int index) {
+            // Solo actualiza el índice interno, NO llama a onOptionChanged ni ejecuta acción
+            setState(() {
+              _currentIndex = index;
+            });
+            widget.onPageChanged?.call(
+              index,
+            ); // Si necesitas solo notificar el cambio visual
+          },
           itemBuilder: (context, index) {
             double selected = widget.selectedIndex.toDouble();
             double distance = (selected - index).abs();
