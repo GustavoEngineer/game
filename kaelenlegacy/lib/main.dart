@@ -16,6 +16,7 @@ void main() {
       child: MaterialApp(
         home: HomeScreen(),
         theme: ThemeData(useMaterial3: true),
+        debugShowCheckedModeBanner: false,
       ),
     ),
   );

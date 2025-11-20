@@ -3,10 +3,10 @@ import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'providers/menu_carousel_provider.dart';
-import 'providers/store_roulette_provider.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_config_provider.dart';
 import '../gamezone/game_zone_screen.dart';
+import 'widgets/login_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -29,9 +29,6 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isZooming = false;
   bool _isTransitioning = false;
   double _fadeToBlack = 0.0;
-
-  // Provider para la ruleta de la tienda
-  final storeRouletteProvider = StoreRouletteProvider();
 
   @override
   void initState() {
@@ -373,7 +370,11 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                             onPressed: () {
-                              // Acción de iniciar sesión
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginWidget(),
+                                ),
+                              );
                             },
                             child: Text(
                               'Iniciar sesión',

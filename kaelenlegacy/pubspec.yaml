@@ -30,6 +30,8 @@ flutter:
       fonts:
         - asset: assets/fonts/Cinzel/Cinzel-Black.ttf
           weight: 900
+        - asset: assets/fonts/Cinzel/Cinzel-Medium.ttf
+          weight: 500
     - family: Spectral
       fonts:
         - asset: assets/fonts/spectral/Spectral-Italic.ttf
